@@ -1,0 +1,56 @@
+// Конфигурация mikrotik_dns_sync.
+// Формат — JSON5: допустимы комментарии, висячие запятые и одинарные
+// кавычки. Обычный JSON тоже читается без изменений.
+{
+  delete_comment: "del",  // маркер удаления: такой комментарий у записи — «удалить везде»
+  adopt_foreign: true,    // перехватывать одноимённые FWD вне списка (false — игнорировать их)
+  timeout: 15,            // таймаут HTTP-запросов, сек (меньше 60: дольше REST API не отвечает)
+  max_workers: 4,         // параллельность опроса устройств
+
+  // forward-to для новых записей на устройстве, где своих записей ещё нет
+  // и определить адрес не по чему. Если не задан — берётся значение
+  // с устройства-источника:
+  // default_forward_to: "192.168.88.5",
+
+  devices: [
+    {
+      name: "gw-main",
+      host: "192.168.88.1",
+      scheme: "https",            // http или https
+      port: 443,                  // 443 для https, 80 для http — можно не указывать
+      username: "dns-sync",
+      password: "change-me",      // или password_env — имя переменной окружения
+      verify_ssl: false,          // true + ca_cert для проверки сертификата роутера
+      address_list: "blocked-dns", // имя списка на ЭТОМ устройстве
+
+      // домены, которые не синхронизируются на/с этого устройства
+      // (точное совпадение имени записи, без учёта регистра):
+      // exclude_domains: ["local.corp", "printer.lan"],
+
+      enabled: true,
+    },
+    {
+      name: "gw-branch",
+      host: "192.168.88.2",
+      scheme: "https",
+      port: 443,
+      username: "dns-sync",
+      password_env: "MIKROTIK_GW_BRANCH_PASS", // пароль берётся из переменной окружения
+      verify_ssl: true,
+      ca_cert: "rest-ca-branch.crt",           // CA-сертификат роутера (rest-ca.crt)
+      address_list: "dns-block-branch",
+      enabled: true,
+    },
+    {
+      // Временно исключённое устройство: сбор и применение его не затрагивают.
+      name: "gw-lab",
+      host: "10.10.10.10",
+      scheme: "http",
+      port: 80,
+      username: "dns-sync",
+      password: "change-me-too",
+      address_list: "lab-list",
+      enabled: false,
+    },
+  ],
+}

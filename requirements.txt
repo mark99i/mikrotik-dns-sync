@@ -1,0 +1,4 @@
+requests==2.34.2
+pydantic==2.14.1
+json5==0.17.3
+python-dotenv==1.2.4

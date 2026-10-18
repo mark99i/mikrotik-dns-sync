@@ -1,0 +1,6 @@
+.kilo
+.idea
+.env
+config.json5
+docker-compose.yaml
+docker-compose.yml

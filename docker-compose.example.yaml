@@ -1,0 +1,60 @@
+# Пример конфигурации Docker Compose для mikrotik-dns-sync.
+#
+# Использование:
+#   cp docker-compose.example.yaml docker-compose.yaml   # и отредактируйте
+#   cp config.example.json5 config.json5                 # и отредактируйте
+#   docker compose run --rm dry-run                       # посмотреть план
+#   docker compose run --rm sync                          # применить изменения
+#
+# Скрипты dry-run/sync — разовые (profile "cli", запуск через docker compose
+# run). Для постоянной работы используйте сервис `service` (service.py).
+
+services:
+  # Показать план изменений, ничего не применяя:
+  dry-run:
+    build: .
+    image: mikrotik-dns-sync
+    profiles: ["cli"]
+    volumes:
+      - ./config.json5:/app/config.json5:ro
+      # CA-сертификаты роутеров, если в конфиге verify_ssl=true и ca_cert=...
+      - ./rest-ca-main.crt:/app/rest-ca-main.crt:ro
+      - ./rest-ca-branch.crt:/app/rest-ca-branch.crt:ro
+    environment:
+      # для устройств с password_env в config.json5 (значение — из .env)
+      MIKROTIK_GW_BRANCH_PASS: ${MIKROTIK_GW_BRANCH_PASS:-change-me}
+    command: ["--dry-run"]
+
+  # Применить изменения:
+  sync:
+    image: mikrotik-dns-sync
+    profiles: ["cli"]
+    volumes:
+      - ./config.json5:/app/config.json5:ro
+      - ./rest-ca-main.crt:/app/rest-ca-main.crt:ro
+      - ./rest-ca-branch.crt:/app/rest-ca-branch.crt:ro
+    environment:
+      MIKROTIK_GW_BRANCH_PASS: ${MIKROTIK_GW_BRANCH_PASS:-change-me}
+    command: []
+
+  # Периодическая синхронизация (service.py, каждые 5 минут по умолчанию):
+  service:
+    image: mikrotik-dns-sync
+    restart: unless-stopped
+    volumes:
+      - ./config.json5:/app/config.json5:ro
+      - ./rest-ca-main.crt:/app/rest-ca-main.crt:ro
+      - ./rest-ca-branch.crt:/app/rest-ca-branch.crt:ro
+    environment:
+      MIKROTIK_GW_BRANCH_PASS: ${MIKROTIK_GW_BRANCH_PASS:-change-me}
+      # SYNC_INTERVAL_MINUTES: "5"   # интервал (или флаг -i в command)
+    entrypoint: ["python", "/app/service.py"]
+    command: ["-c", "/app/config.json"]
+    # остановка: docker compose stop service — SIGTERM обрабатывается,
+    # текущий запуск синхронизации доедет до конца, затем контейнер выйдет
+    stop_grace_period: 90s
+
+  # Для доступа к роутерам в локальной сети на Linux удобен host-режим —
+  # раскомментируйте в нужном сервисе (на Docker Desktop для Windows/macOS
+  # не работает, оставьте bridge по умолчанию):
+  #   network_mode: host
