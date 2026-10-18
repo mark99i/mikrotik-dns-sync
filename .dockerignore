@@ -1,0 +1,18 @@
+# Контекст сборки образа: только код и requirements.
+# Секреты и локальные файлы в образ не попадают.
+.git
+.gitignore
+.idea
+.kilo
+.env
+config.json5
+config.example.json5
+docker-compose.yaml
+docker-compose.yml
+docker-compose.example.yaml
+.venv
+__pycache__/
+*.pyc
+tests/
+README.md
+LICENSE

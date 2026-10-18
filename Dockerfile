@@ -1,5 +1,10 @@
 FROM python:3.15-slim
 
+LABEL org.opencontainers.image.title="mikrotik-dns-sync" \
+      org.opencontainers.image.description="Синхронизация DNS static (FWD + address-list) между устройствами MikroTik RouterOS 7 через REST API" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.base.name="docker.io/library/python:3.15-slim"
+
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \

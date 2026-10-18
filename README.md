@@ -1,10 +1,21 @@
 # mikrotik_dns_sync — синхронизация DNS static (FWD + address-list) между устройствами RouterOS 7
 
-Скрипт на Python (`main.py`), который через **REST API RouterOS 7**
-синхронизирует записи `/ip/dns/static` типа **FWD** с заполненным
-`address-list` между несколькими устройствами MikroTik. Соответствует
-актуальному REST API RouterOS 7.x (`GET` = print, `PUT` = add,
-`PATCH` = set, `DELETE` = remove).
+Утилита на Python, которая через **REST API RouterOS 7** синхронизирует
+записи `/ip/dns/static` типа **FWD** с заполненным `address-list` между
+несколькими устройствами MikroTik. Соответствует актуальному REST API
+RouterOS 7.x (`GET` = print, `PUT` = add, `PATCH` = set, `DELETE` = remove).
+
+Состав проекта:
+
+| Файл | Назначение |
+|------|------------|
+| `main.py` | логика синхронизации (сбор → слияние → применение) и CLI |
+| `models.py` | pydantic-модели: конфигурация, записи, статистика |
+| `ros_api.py` | REST-клиент RouterOS (`RouterOsRest`, `DeviceError`) |
+| `config.py` | загрузка и валидация `config.json5` |
+| `helpers.py` | маркер удаления, сравнение записей, локальный `forward-to` |
+| `service.py` | периодический запуск с корректной обработкой сигналов |
+| `tests/` | офлайн-тесты (unittest, без сети и роутеров) |
 
 ## Что делает
 
@@ -183,11 +194,55 @@ python main.py -c config.json5 -v
 python main.py --dry-run
 ```
 
-По расписанию (cron, каждые 5 минут):
+## Запуск по расписанию
 
+### Встроенный сервис (service.py)
+
+```bash
+python service.py -c config.json5 -i 5            # каждые 5 минут
+python service.py -c config.json5 --interval 5 --device gw-branch -v
 ```
+
+`-i/--interval` — минуты между запусками (или переменная окружения
+`SYNC_INTERVAL_MINUTES`, можно держать в `.env`); `--device`, `--force`,
+`-v` передаются в `main.py`.
+
+Остановка по SIGINT/SIGTERM (`Ctrl+C`, `docker stop`): сигнал во время
+ожидания завершает сервис сразу; во время синхронизации — текущий запуск
+доезжает до конца (роутеры не остаются в полуприменённом состоянии) и
+сервис выходит; повторный сигнал — немедленный выход. Код возврата —
+последний код синхронизации; ошибка конфигурации (код 3) останавливает
+сервис сразу, чтобы оркестратор перезапустил его с задержкой
+(`restart: on-failure` / `unless-stopped`).
+
+### cron
+
+```cron
 */5 * * * * /usr/bin/python3 /opt/dns-sync/main.py -c /opt/dns-sync/config.json5 >> /var/log/dns-sync.log 2>&1
 ```
+
+Учтите: для запуска нужен весь каталог проекта (main.py импортирует
+`models`, `ros_api`, `config`, `helpers`), а не один `main.py`.
+
+## Docker
+
+```bash
+cp config.example.json5 config.json5   # и отредактируйте
+cp docker-compose.example.yaml docker-compose.yaml
+# при необходимости создайте .env с переменными для password_env, например:
+#   MIKROTIK_GW_BRANCH_PASS="пароль"
+
+docker compose run --rm dry-run    # посмотреть план
+docker compose run --rm sync       # применить изменения
+docker compose up -d service       # постоянная синхронизация (каждые 5 мин)
+```
+
+`config.json5`, CA-сертификаты и переменные `password_env` монтируются/
+передаются через compose (значения берутся из `.env`). Остановка сервиса:
+`docker compose stop service` — текущий запуск доедет до конца
+(`stop_grace_period: 90s`). Для доступа к роутерам в локальной сети на
+Linux удобен `network_mode: host` (в примере закомментирован; в Docker
+Desktop для Windows/macOS не работает).
 
 ## Тесты
 
@@ -200,7 +255,9 @@ python -m unittest discover -s tests -t . -v
 
 Временные файлы создаются в `tests/tmp/` и удаляются по завершении тестов.
 pytest не обязателен (используется unittest из стандартной библиотеки),
-но тесты запускаются и через него, если он установлен.
+но тесты запускаются и через него, если он установлен. В CI (GitHub Actions,
+`.github/workflows/tests.yml`) тесты прогоняются на каждый push в master
+и на pull request.
 
 ## Пример работы
 
