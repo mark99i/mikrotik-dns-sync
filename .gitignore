@@ -5,4 +5,3 @@ config.json5
 docker-compose.yaml
 docker-compose.yml
 __pycache__/
-tests/__pycache__/
