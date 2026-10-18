@@ -3,4 +3,6 @@
 .env
 config.json5
 docker-compose.yaml
-docker-compose.yml__pycache__/
+docker-compose.yml
+__pycache__/
+tests/__pycache__/
