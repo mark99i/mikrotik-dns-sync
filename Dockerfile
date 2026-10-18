@@ -10,7 +10,7 @@ WORKDIR /app
 COPY requirements.txt /app/requirements.txt
 RUN pip install -r /app/requirements.txt
 
-COPY main.py service.py models.py /app/
+COPY main.py service.py models.py ros_api.py config.py helpers.py /app/
 
 # Непривилегированный пользователь
 RUN useradd --system --no-create-home --uid 1000 dnssync \

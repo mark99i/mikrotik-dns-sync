@@ -56,9 +56,7 @@ class DeviceConfig(BaseModel):
     verify: bool | str = False  # False | True | путь к CA-сертификату
     timeout: PositiveFloat = 15.0
     enabled: bool = True
-    exclude_domains: list[str] = Field(default_factory=list)  # домены, которые не
-                                                              # синхронизируются
-                                                              # на/с устройства
+    exclude_domains: list[str] = Field(default_factory=list)
 
     @field_validator("exclude_domains", mode="before")
     @classmethod
@@ -101,7 +99,7 @@ class AppConfig(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     devices: list[DeviceConfig]
-    delete_comment: str = "del"   # маркер удаления в комментарии записи
+    delete_comment: str = "del"
     adopt_foreign: bool = True    # перехватывать одноимённые FWD-записи,
                                   # находящиеся вне настроенного address-list
     max_workers: int = 4

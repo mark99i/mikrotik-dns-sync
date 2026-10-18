@@ -6,7 +6,9 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from main import Entry, build_desired, collect_device, is_delete_marker, ros_bool
+from helpers import is_delete_marker
+from main import build_desired, collect_device, ros_bool
+from models import Entry
 from tests.util import FakeRest, make_device, make_entry, make_row, make_snap
 
 

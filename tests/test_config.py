@@ -7,7 +7,7 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from main import SyncError, load_config
+from config import SyncError, load_config
 from tests.util import TmpFiles
 
 

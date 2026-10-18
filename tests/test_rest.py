@@ -7,8 +7,8 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import main as main_mod
-from main import DeviceError, RouterOsRest
+import ros_api as ros_api_mod
+from ros_api import DeviceError, RouterOsRest
 from tests.util import make_device
 
 
@@ -64,11 +64,11 @@ class _FakeRequests:
 
 class RouterOsRestTest(unittest.TestCase):
     def setUp(self):
-        self._real_requests = main_mod.requests
-        main_mod.requests = _FakeRequests()
+        self._real_requests = ros_api_mod.requests
+        ros_api_mod.requests = _FakeRequests()
 
     def tearDown(self):
-        main_mod.requests = self._real_requests
+        ros_api_mod.requests = self._real_requests
 
     def _rest(self, **kw) -> RouterOsRest:
         return RouterOsRest(make_device("gw", **kw))
