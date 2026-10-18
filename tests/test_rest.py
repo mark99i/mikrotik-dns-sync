@@ -18,10 +18,13 @@ class _FakeResponse:
         self._json = json_data
         self.text = text
         if text:
+            self.text = text
             self.content = text.encode("utf-8")
         elif json_data is not None:
-            self.content = json.dumps(json_data).encode("utf-8")
+            self.text = json.dumps(json_data)
+            self.content = self.text.encode("utf-8")
         else:
+            self.text = ""
             self.content = b""
 
     def json(self):
@@ -145,6 +148,18 @@ class RouterOsRestTest(unittest.TestCase):
         self.assertIn("[gw]", text)
         self.assertIn("HTTP 400", text)
         self.assertIn("already has such name", text)
+
+    def test_http_error_logs_full_response_body(self):
+        # причина в detail: тело ответа выводится целиком, а не только message
+        rest = self._rest()
+        rest.session.responses = [
+            _FakeResponse(500, {"detail": "not enough permissions (9)",
+                                "error": 500, "message": "Internal Server Error"})]
+        with self.assertRaises(DeviceError) as ctx:
+            rest.create_entry({"name": "x.com"})
+        text = str(ctx.exception)
+        self.assertIn("HTTP 500", text)
+        self.assertIn("not enough permissions (9)", text)
 
     def test_http_error_without_json_body(self):
         rest = self._rest()

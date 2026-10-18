@@ -205,11 +205,10 @@ class RouterOsRest:
 
     @staticmethod
     def _error_detail(resp) -> str:
-        try:
-            data = resp.json()
-            return str(data.get("message") or data.get("detail") or data)
-        except ValueError:
-            return (resp.text or "").strip()[:200]
+        # полное тело ответа: RouterOS держит причину отказа в поле detail,
+        # которое важнее обобщённого message
+        body = (resp.text or "").strip()
+        return body[:500] if body else "<пустое тело ответа>"
 
     # -- конкретные операции --
 
