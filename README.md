@@ -244,6 +244,13 @@ docker compose up -d service       # постоянная синхронизац
 Linux удобен `network_mode: host` (в примере закомментирован; в Docker
 Desktop для Windows/macOS не работает).
 
+Готовый образ из Docker Hub (сборка локально не нужна):
+
+```bash
+docker run --rm -v ./config.json5:/app/config.json5:ro \
+    --env-file .env mark99i/mikrotik-dns-sync:latest --dry-run
+```
+
 ## Тесты
 
 Офлайн-тесты без сети и роутеров — REST-слой подменяется заглушками,
@@ -257,7 +264,9 @@ python -m unittest discover -s tests -t . -v
 pytest не обязателен (используется unittest из стандартной библиотеки),
 но тесты запускаются и через него, если он установлен. В CI (GitHub Actions,
 `.github/workflows/tests.yml`) тесты прогоняются на каждый push в master
-и на pull request.
+и на pull request. Образ в Docker Hub собирается и публикуется workflow
+`.github/workflows/docker.yml` — тоже после зелёных тестов, по тегам
+версий вида `26.10.19` (CalVer).
 
 ## Пример работы
 
